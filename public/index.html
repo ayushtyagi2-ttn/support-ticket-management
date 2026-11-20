@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Support Tickets</title>
+    <style>
+      :root {
+        font-family: system-ui, sans-serif;
+        color: #0f172a;
+        background: #f8fafc;
+      }
+      body {
+        max-width: 720px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      h1 {
+        margin-bottom: 0.25rem;
+      }
+      .muted {
+        color: #64748b;
+        margin-bottom: 1.5rem;
+      }
+      form {
+        display: grid;
+        gap: 0.75rem;
+        margin-bottom: 2rem;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      input,
+      textarea,
+      select,
+      button {
+        font: inherit;
+      }
+      textarea {
+        min-height: 80px;
+      }
+      button {
+        justify-self: start;
+        background: #2563eb;
+        color: #fff;
+        border: 0;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+      }
+      ul {
+        list-style: none;
+        padding: 0;
+        display: grid;
+        gap: 0.75rem;
+      }
+      li {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem;
+      }
+      .badge {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #334155;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Support Tickets</h1>
+    <p class="muted">Create and track support requests locally.</p>
+
+    <form id="ticket-form">
+      <label>
+        Subject
+        <input name="subject" required placeholder="Brief summary" />
+      </label>
+      <label>
+        Description
+        <textarea name="description" required placeholder="What happened?"></textarea>
+      </label>
+      <label>
+        Priority
+        <select name="priority">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+      </label>
+      <button type="submit">Create ticket</button>
+    </form>
+
+    <h2>Tickets</h2>
+    <ul id="ticket-list"></ul>
+
+    <script>
+      async function loadTickets() {
+        const res = await fetch("/api/tickets");
+        const tickets = await res.json();
+        const list = document.getElementById("ticket-list");
+        list.innerHTML = "";
+        if (tickets.length === 0) {
+          list.innerHTML = "<li>No tickets yet.</li>";
+          return;
+        }
+        for (const t of tickets) {
+          const li = document.createElement("li");
+          li.innerHTML =
+            `<strong>#${t.id} — ${escapeHtml(t.subject)}</strong><br>` +
+            `<span class="badge">${escapeHtml(t.status)} · ${escapeHtml(t.priority)}</span><br>` +
+            escapeHtml(t.description);
+          list.appendChild(li);
+        }
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;");
+      }
+
+      document.getElementById("ticket-form").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const data = Object.fromEntries(new FormData(e.target).entries());
+        const res = await fetch("/api/tickets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        if (!res.ok) {
+          alert("Failed to create ticket");
+          return;
+        }
+        e.target.reset();
+        await loadTickets();
+      });
+
+      loadTickets();
+    </script>
+  </body>
+</html>

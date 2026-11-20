@@ -1,0 +1,17 @@
+{
+  "name": "support-ticket-management",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Lightweight support ticket API and web UI for local development",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "node src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test test/tickets.test.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
