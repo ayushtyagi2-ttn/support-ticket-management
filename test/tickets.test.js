@@ -1,13 +1,12 @@
-const { test, beforeEach } = require("node:test");
+const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const fs = require("fs");
-const path = require("path");
 const request = require("http");
 
 const { DATA_FILE } = require("../src/store");
 
-const TEST_PORT = 3456;
 let server;
+let testPort;
 
 function httpRequest(method, urlPath, body) {
   return new Promise((resolve, reject) => {
@@ -15,7 +14,7 @@ function httpRequest(method, urlPath, body) {
     const req = request.request(
       {
         hostname: "127.0.0.1",
-        port: TEST_PORT,
+        port: testPort,
         path: urlPath,
         method,
         headers: body
@@ -38,15 +37,22 @@ function httpRequest(method, urlPath, body) {
   });
 }
 
-beforeEach(async () => {
+before(async () => {
   if (fs.existsSync(DATA_FILE)) fs.unlinkSync(DATA_FILE);
-  if (server) {
-    await new Promise((resolve) => server.close(resolve));
-  }
-  process.env.PORT = String(TEST_PORT);
   process.env.HOST = "127.0.0.1";
   const app = require("../src/server");
-  server = app.listen(TEST_PORT, "127.0.0.1");
+  await new Promise((resolve, reject) => {
+    server = app.listen(0, "127.0.0.1", (err) => (err ? reject(err) : resolve()));
+  });
+  testPort = server.address().port;
+  process.env.PORT = String(testPort);
+});
+
+after(async () => {
+  if (server) {
+    await new Promise((resolve) => server.close(resolve));
+    server = null;
+  }
 });
 
 test("health endpoint responds", async () => {
